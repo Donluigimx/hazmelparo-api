@@ -13,7 +13,7 @@ class Sessions
 
   def self.get_session(token)
     begin
-      decoded = JWT.decode token, @secret, false, { algorithm: @algorithm }
+      decoded = JWT.decode token, @secret, true, { algorithm: @algorithm }
     rescue => exception
       puts @secret, @algorithm
       raise Unauthorized, 'Not enough permissions'
