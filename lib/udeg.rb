@@ -3,17 +3,19 @@ require 'uri'
 require 'httparty'
 
 class SIIAU
-  def initialize(nip:, password:)
-    @base = 'http://siiauescolar.siiau.udg.mx'
-    @cookies = nil
-    @siiau_id = nil
-    @degrees
-
-    login(nip: nip, password: password)
+  class << self
+    attr_reader :base
   end
 
-  def login(nip:, password:)
-    uri = URI.join(@base, '/wus/gupprincipal.valida_inicio')
+  @base = 'http://siiauescolar.siiau.udg.mx'
+
+  def initialize(cookies:, siiau_id:)
+    @cookies = cookies
+    @siiau_id = siiau_id
+  end
+
+  def self.with_login(nip:, password:)
+    uri = URI.join(SIIAU.base, '/wus/gupprincipal.valida_inicio')
     response = HTTParty.post(
       uri,
       body: URI.encode_www_form(
@@ -27,19 +29,32 @@ class SIIAU
 
     raise 'Login error' if response.response.code != '200' || response.body =~ /error/
 
-    @cookies = build_cookie response.headers['set-cookie']
-    @siiau_id = response.headers['set-cookie'].match(/SIIAUUDG=([^;]+?);/)[1]
+    cookies = build_cookie response.headers['set-cookie']
+    siiau_id = response.headers['set-cookie'].match(/SIIAUUDG=([^;]+?);/)[1]
+    SIIAU.new(cookies: cookies, siiau_id: siiau_id)
   end
 
-  def build_cookie(cookies)
+  def self.with_session(session)
+    SIIAU.new(cookies: session["cookies"], siiau_id: session["siiau_id"])
+  end
+
+  def self.build_cookie(cookies)
     cookies
       .scan(/(?:([\w\d]+?=[\w\d]+);)/)
       .flatten
       .join('; ')
   end
 
+  def get_session()
+    {
+      cookies: @cookies,
+      siiau_id: @siiau_id,
+      service: 'SIIAU'
+    }
+  end
+
   def menu()
-    uri = URI.join(@base, "/wal/gupmenug.menu?#{URI.encode_www_form(
+    uri = URI.join(SIIAU.base, "/wal/gupmenug.menu?#{URI.encode_www_form(
       p_sistema_c: 'ALUMNOS',
       p_sistemaid_n: 3,
       p_menupredid_n: 3,
@@ -69,11 +84,13 @@ class SIIAU
   def student_proof(degree)
     degree_name, degree_cycle = degree.match(/(.+?)-(.+)/)[1,2]
 
-    uri = URI.join(@base, "/wal/sgphist.constancia?#{URI.encode_www_form(
+    uri = URI.join(SIIAU.base, "/wal/sgphist.constancia?#{URI.encode_www_form(
       pidmp: @siiau_id,
       majrp: degree_name,
       cicloap: degree_cycle
     )}")
+
+    puts uri
 
     response = HTTParty.get(
       uri,

@@ -5,6 +5,8 @@ require_relative './helpers/validator.rb'
 require_relative './helpers/responses.rb'
 require_relative './helpers/errors.rb'
 require_relative './helpers/error_handler.rb'
+require_relative './helpers/sessions.rb'
+require_relative './helpers/auth.rb'
 
 require_relative './lib/udeg.rb'
 
@@ -12,6 +14,7 @@ class App < Sinatra::Base
   register Sinatra::Namespace
   register APIUtils::ErrorHandler
 
+  helpers APIUtils::Auth
   helpers APIUtils::Validator
   helpers APIUtils::Responses
 
@@ -26,6 +29,8 @@ class App < Sinatra::Base
     set :raise_errors, false
     set :dump_errors, false
     set :logging, false 
+
+    Sessions.configure!(secret: ENV['SESSION_SECRET'], algorithm: ENV['SESSION_ALGORITHM'])
   end
 end
 

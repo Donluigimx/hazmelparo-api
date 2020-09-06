@@ -7,25 +7,30 @@ App.register_routes! do
       siiau = nil
 
       begin
-        siiau = SIIAU.new(nip: nip, password: password)
+        siiau = SIIAU.with_login(nip: nip, password: password)
       rescue => exception
         puts exception
         raise BadRequest, 'Error trying to login'
       end
-      degrees = siiau.menu
 
-      success_response degrees
+      degrees = siiau.menu
+      token = Sessions.generate_session(siiau.get_session)
+
+      success_response(
+        token: token,
+        degrees: degrees
+      )
     end
 
     post '/student_proof' do
-      nip = get_data(:nip) { is_required && matches(/^\d{2,9}$/) } 
-      password = get_data(:password) { is_required && max_size(20) }
+      session_from('SIIAU')
+
       degree = get_data(:degree) { is_required }
 
       siiau = nil
 
       begin
-        siiau = SIIAU.new(nip: nip, password: password)
+        siiau = SIIAU.with_session(@session_data)
       rescue => exception
         puts exception
         raise BadRequest, 'Error trying to login'

@@ -26,6 +26,7 @@ module APIUtils
       end
 
       app.error do |error|
+        puts error
         error_response(
           status_code: 500,
           message: 'Internal Server Error',
