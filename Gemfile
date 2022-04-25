@@ -10,6 +10,7 @@ gem "thin", "~> 1.7"
 gem "httparty", "~> 0.18.0"
 gem "sinatra-contrib", "~> 2.0"
 
-gem "rack", "~> 2.2"
+gem "rack", "~> 2.2.3"
 
 gem "jwt", "~> 2.2"
+gem 'solargraph', group: :development
